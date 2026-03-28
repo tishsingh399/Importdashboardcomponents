@@ -238,7 +238,7 @@ export default function App() {
 
             {/* Row 1: Urgent Alert Banner */}
             <div
-              className="flex items-center justify-between px-5 py-3.5"
+              className="flex items-center gap-3 px-4 py-3"
               style={{
                 background: 'linear-gradient(90deg, rgba(255,77,79,0.12) 0%, rgba(255,77,79,0.04) 60%, transparent 100%)',
                 border: '1px solid rgba(255,77,79,0.25)',
@@ -246,38 +246,29 @@ export default function App() {
                 borderRadius: 'var(--radius-card)',
               }}
             >
-              <div className="flex items-center gap-3">
-                <div
-                  className="size-7 flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: 'rgba(255,77,79,0.2)', borderRadius: '50%' }}
-                >
-                  <Zap className="size-3.5" style={{ color: '#ff4d4f' }} />
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span
-                    className="px-1.5 py-0.5"
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      backgroundColor: '#ff4d4f',
-                      color: 'white',
-                      borderRadius: '4px',
-                      letterSpacing: '0.06em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    LIVE THREAT
-                  </span>
-                  <span style={{ fontSize: 'var(--text-base)', fontWeight: '600' }}>
-                    CVE-2024-1234 actively exploited
-                  </span>
-                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 'var(--text-label)' }}>·</span>
-                  <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
-                    12 resources affected · Detected 4 minutes ago
-                  </span>
-                </div>
+              <div
+                className="size-6 flex items-center justify-center shrink-0"
+                style={{ backgroundColor: 'rgba(255,77,79,0.2)', borderRadius: '50%' }}
+              >
+                <Zap className="size-3" style={{ color: '#ff4d4f' }} />
               </div>
-              <div className="flex gap-2 shrink-0">
+              <span
+                className="shrink-0 px-1.5 py-0.5"
+                style={{
+                  fontSize: '10px', fontWeight: '700',
+                  backgroundColor: '#ff4d4f', color: 'white',
+                  borderRadius: '4px', letterSpacing: '0.06em', textTransform: 'uppercase',
+                }}
+              >
+                LIVE THREAT
+              </span>
+              <span style={{ fontSize: 'var(--text-base)', fontWeight: '600', flexShrink: 0 }}>
+                CVE-2024-1234 actively exploited
+              </span>
+              <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
+                · 12 resources affected · 4 min ago
+              </span>
+              <div className="flex gap-2 ml-auto shrink-0">
                 <Button size="sm" variant="outline" style={{ borderColor: 'rgba(255,77,79,0.3)', color: '#ff4d4f', fontSize: 'var(--text-label)' }}>
                   Dismiss
                 </Button>
