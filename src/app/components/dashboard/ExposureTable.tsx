@@ -4,7 +4,7 @@ import {
 import { Button } from "../ui/button";
 import { RiskBadge, StatusBadge } from "./RiskBadge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import { ExternalLink, Zap, AlertTriangle, Eye } from "lucide-react";
+import { ExternalLink, Zap, AlertTriangle, Eye, Lock, User } from "lucide-react";
 
 interface Exposure {
   id: string;
@@ -26,32 +26,93 @@ interface ExposureTableProps {
   onRemediate?: (id: string) => void;
 }
 
+const tagIcons: Record<string, React.ReactNode> = {
+  exploited: <Zap className="size-2.5" style={{ color: '#ff4d4f' }} />,
+  exposed: <ExternalLink className="size-2.5" style={{ color: '#1890ff' }} />,
+  lateral: <AlertTriangle className="size-2.5" style={{ color: '#faad14' }} />,
+  pii: <Lock className="size-2.5" style={{ color: '#722ed1' }} />,
+  admin: <User className="size-2.5" style={{ color: '#13c2c2' }} />,
+};
+
+const tagTooltips: Record<string, string> = {
+  exploited: "Actively exploited in the wild",
+  exposed: "Internet-facing, publicly accessible",
+  lateral: "Lateral movement path exists",
+  pii: "Accesses personally identifiable information",
+  admin: "Has administrative privileges",
+};
+
+function EpssBar({ value }: { value: number }) {
+  const pct = value * 100;
+  const color = pct >= 50 ? '#ff4d4f' : pct >= 20 ? '#faad14' : '#52c41a';
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="w-14 h-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+        <div
+          className="h-1.5 rounded-full"
+          style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }}
+        />
+      </div>
+      <span style={{ fontSize: '11px', fontWeight: '600', color, minWidth: '32px' }}>
+        {pct.toFixed(0)}%
+      </span>
+    </div>
+  );
+}
+
 export function ExposureTable({ exposures, onViewDetails, onRemediate }: ExposureTableProps) {
   return (
     <TooltipProvider>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[280px]">Issue</TableHead>
+          <TableRow style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+            <TableHead className="w-[260px]">Issue</TableHead>
             <TableHead>Risk</TableHead>
+            <TableHead>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help border-b border-dashed" style={{ borderColor: 'var(--muted-foreground)' }}>
+                    CVSS
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Common Vulnerability Scoring System — 0-10 severity score</TooltipContent>
+              </Tooltip>
+            </TableHead>
+            <TableHead>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="cursor-help border-b border-dashed" style={{ borderColor: 'var(--muted-foreground)' }}>
+                    EPSS
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Exploit Prediction Scoring System — probability of exploitation in 30 days</TooltipContent>
+              </Tooltip>
+            </TableHead>
             <TableHead>Asset</TableHead>
             <TableHead>Context</TableHead>
             <TableHead className="text-right">Paths</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right w-[140px]">Actions</TableHead>
+            <TableHead className="text-right w-[120px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {exposures.map((exp) => (
-            <TableRow key={exp.id} className="group">
+            <TableRow
+              key={exp.id}
+              className="group"
+              style={{
+                borderColor: 'rgba(255,255,255,0.04)',
+                backgroundColor: exp.risk === 'critical' ? 'rgba(255,77,79,0.025)' : 'transparent',
+              }}
+            >
               <TableCell>
                 <div className="flex flex-col gap-0.5">
-                  <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--text-base)' }}>
+                  <span style={{ fontWeight: '500', fontSize: 'var(--text-base)' }}>
                     {exp.title}
                   </span>
-                  <span 
-                    className="text-muted-foreground monospace" 
-                    style={{ fontSize: 'var(--text-monospace)' }}
+                  <span
+                    className="text-muted-foreground font-mono"
+                    style={{ fontSize: '11px' }}
                   >
                     {exp.id}
                   </span>
@@ -61,14 +122,31 @@ export function ExposureTable({ exposures, onViewDetails, onRemediate }: Exposur
                 <RiskBadge level={exp.risk} score={exp.score} />
               </TableCell>
               <TableCell>
+                {exp.cvss !== undefined && (
+                  <span
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: exp.cvss >= 9 ? '#ff4d4f' : exp.cvss >= 7 ? '#faad14' : exp.cvss >= 4 ? '#1890ff' : 'var(--muted-foreground)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {exp.cvss.toFixed(1)}
+                  </span>
+                )}
+              </TableCell>
+              <TableCell>
+                {exp.epss !== undefined && <EpssBar value={exp.epss} />}
+              </TableCell>
+              <TableCell>
                 <div className="flex flex-col gap-0.5">
-                  <span 
-                    className="monospace truncate max-w-[160px]" 
-                    style={{ fontSize: 'var(--text-base)' }}
+                  <span
+                    className="font-mono truncate max-w-[140px] block"
+                    style={{ fontSize: '12px' }}
                   >
                     {exp.asset}
                   </span>
-                  <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
+                  <span className="text-muted-foreground" style={{ fontSize: '11px' }}>
                     {exp.assetType}
                   </span>
                 </div>
@@ -78,40 +156,44 @@ export function ExposureTable({ exposures, onViewDetails, onRemediate }: Exposur
                   {exp.tags.map((tag) => (
                     <Tooltip key={tag}>
                       <TooltipTrigger asChild>
-                        <span 
-                          className="inline-flex items-center gap-1 bg-muted text-muted-foreground"
+                        <span
+                          className="inline-flex items-center gap-1"
                           style={{
                             fontSize: '10px',
-                            fontWeight: 'var(--font-weight-medium)',
+                            fontWeight: '600',
                             padding: '2px 6px',
-                            borderRadius: 'var(--radius)'
+                            borderRadius: '99px',
+                            backgroundColor: 'rgba(255,255,255,0.06)',
+                            color: 'var(--muted-foreground)',
+                            cursor: 'default',
+                            letterSpacing: '0.02em',
+                            textTransform: 'uppercase',
                           }}
                         >
-                          {tag === "exploited" && <Zap className="size-2.5" style={{ color: 'rgb(var(--destructive))' }} />}
-                          {tag === "exposed" && <ExternalLink className="size-2.5" style={{ color: 'rgb(var(--chart-4))' }} />}
-                          {tag === "lateral" && <AlertTriangle className="size-2.5" style={{ color: 'rgb(var(--chart-3))' }} />}
+                          {tagIcons[tag]}
                           {tag}
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent>
-                        {tag === "exploited" && "Actively exploited in the wild"}
-                        {tag === "exposed" && "Internet-facing, publicly accessible"}
-                        {tag === "lateral" && "Lateral movement path exists"}
-                        {tag === "pii" && "Accesses personally identifiable information"}
-                        {tag === "admin" && "Has administrative privileges"}
-                      </TooltipContent>
+                      <TooltipContent>{tagTooltips[tag]}</TooltipContent>
                     </Tooltip>
                   ))}
                 </div>
               </TableCell>
-              <TableCell className="text-right monospace" style={{ fontSize: 'var(--text-base)' }}>
-                {exp.pathCount}
+              <TableCell className="text-right font-mono" style={{ fontSize: 'var(--text-base)' }}>
+                <span
+                  style={{
+                    color: exp.pathCount >= 10 ? '#ff4d4f' : exp.pathCount >= 5 ? '#faad14' : 'var(--foreground)',
+                    fontWeight: exp.pathCount >= 5 ? '600' : 'normal',
+                  }}
+                >
+                  {exp.pathCount}
+                </span>
               </TableCell>
               <TableCell>
                 <StatusBadge status={exp.status} />
               </TableCell>
               <TableCell className="text-right">
-                <div className="flex gap-1 justify-end opacity-70 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1 justify-end opacity-60 group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -125,8 +207,11 @@ export function ExposureTable({ exposures, onViewDetails, onRemediate }: Exposur
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-destructive hover:text-destructive"
-                    style={{ fontSize: 'var(--text-label)' }}
+                    className="h-7 px-2"
+                    style={{
+                      fontSize: 'var(--text-label)',
+                      color: exp.risk === 'critical' ? '#ff4d4f' : undefined,
+                    }}
                     onClick={() => onRemediate?.(exp.id)}
                   >
                     Fix

@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
-const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'];
+const weeks = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6'];
 
 const data = {
   secureScore: [62, 68, 71, 76, 80, 85],
@@ -8,15 +9,15 @@ const data = {
   attackPaths: [45, 42, 38, 30, 22, 12],
 };
 
-const maxVal = 100;
 const chartH = 200;
 const chartW = 560;
-const padL = 45;
-const padR = 20;
-const padT = 10;
-const padB = 30;
+const padL = 48;
+const padR = 24;
+const padT = 16;
+const padB = 36;
 const plotW = chartW - padL - padR;
 const plotH = chartH - padT - padB;
+const maxVal = 100;
 
 function toX(i: number) {
   return padL + (i / (weeks.length - 1)) * plotW;
@@ -25,87 +26,216 @@ function toY(v: number) {
   return padT + plotH - (v / maxVal) * plotH;
 }
 
-function polyline(values: number[], color: string) {
-  const points = values.map((v, i) => `${toX(i)},${toY(v)}`).join(' ');
-  const areaPoints = points + ` ${toX(values.length - 1)},${toY(0)} ${toX(0)},${toY(0)}`;
-  return (
-    <g>
-      <polygon points={areaPoints} fill={color} opacity="0.06" />
-      <polyline points={points} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      {values.map((v, i) => (
-        <circle key={i} cx={toX(i)} cy={toY(v)} r="3.5" fill="white" stroke={color} strokeWidth="2" />
-      ))}
-    </g>
-  );
+interface Series {
+  values: number[];
+  color: string;
+  label: string;
+  current: number;
+  trend: '+' | '-';
+}
+
+const series: Series[] = [
+  { values: data.secureScore, color: '#52c41a', label: 'Secure Score', current: 85, trend: '+' },
+  { values: data.criticalIssues, color: '#ff4d4f', label: 'Critical Issues', current: 23, trend: '-' },
+  { values: data.attackPaths, color: '#faad14', label: 'Attack Paths', current: 12, trend: '-' },
+];
+
+function buildPath(values: number[]) {
+  return values.map((v, i) => `${i === 0 ? 'M' : 'L'}${toX(i)},${toY(v)}`).join(' ');
+}
+
+function buildArea(values: number[]) {
+  const line = buildPath(values);
+  return `${line} L${toX(values.length - 1)},${padT + plotH} L${toX(0)},${padT + plotH} Z`;
 }
 
 export function PostureTrend() {
+  const [hover, setHover] = useState<{ x: number; y: number; values: number[]; weekIdx: number } | null>(null);
   const gridLines = [0, 25, 50, 75, 100];
 
   return (
     <Card className="h-full">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle
-            className="text-muted-foreground"
-            style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}
-          >
-            Security Posture Trend (6 Weeks)
-          </CardTitle>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <div className="size-2.5" style={{ backgroundColor: 'rgba(82,196,26)', borderRadius: '50%' }} />
-              <span className="text-muted-foreground" style={{ fontSize: '11px' }}>Secure Score</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="size-2.5" style={{ backgroundColor: 'rgba(255,77,79)', borderRadius: '50%' }} />
-              <span className="text-muted-foreground" style={{ fontSize: '11px' }}>Critical Issues</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="size-2.5" style={{ backgroundColor: 'rgba(250,173,20)', borderRadius: '50%' }} />
-              <span className="text-muted-foreground" style={{ fontSize: '11px' }}>Attack Paths</span>
-            </div>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
+              Security Posture Trend
+            </CardTitle>
+            <p className="text-muted-foreground mt-0.5" style={{ fontSize: 'var(--text-label)' }}>
+              6-week improvement overview
+            </p>
+          </div>
+          <div className="flex items-center gap-5">
+            {series.map((s) => (
+              <div key={s.label} className="flex items-center gap-1.5">
+                <div
+                  className="size-2"
+                  style={{ backgroundColor: s.color, borderRadius: '50%', flexShrink: 0 }}
+                />
+                <span style={{ fontSize: '11px', color: 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>
+                  {s.label}
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: s.trend === '+' ? s.color : s.color,
+                  }}
+                >
+                  {s.trend}{s.current}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full" style={{ maxHeight: '260px' }}>
-          {/* Grid */}
-          {gridLines.map((val) => (
-            <g key={val}>
-              <line
-                x1={padL} y1={toY(val)} x2={chartW - padR} y2={toY(val)}
-                stroke="var(--border)" strokeWidth="1" strokeDasharray={val === 0 ? '' : '3,3'}
-              />
+      <CardContent className="pb-4">
+        <div className="relative">
+          <svg
+            viewBox={`0 0 ${chartW} ${chartH}`}
+            className="w-full"
+            style={{ maxHeight: '220px', overflow: 'visible' }}
+            onMouseLeave={() => setHover(null)}
+          >
+            {/* Grid lines */}
+            {gridLines.map((val) => (
+              <g key={val}>
+                <line
+                  x1={padL} y1={toY(val)} x2={chartW - padR} y2={toY(val)}
+                  stroke={val === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)'}
+                  strokeWidth={val === 0 ? '1.5' : '1'}
+                  strokeDasharray={val === 0 ? '' : '3,4'}
+                />
+                <text
+                  x={padL - 10} y={toY(val)} dy="4"
+                  textAnchor="end"
+                  fill="var(--muted-foreground)"
+                  style={{ fontSize: '10px' }}
+                >
+                  {val}
+                </text>
+              </g>
+            ))}
+
+            {/* X labels */}
+            {weeks.map((w, i) => (
               <text
-                x={padL - 8} y={toY(val)} dy="4"
-                textAnchor="end"
+                key={w}
+                x={toX(i)} y={chartH - 6}
+                textAnchor="middle"
                 fill="var(--muted-foreground)"
-                style={{ fontSize: '10px' }}
+                style={{ fontSize: '11px' }}
               >
-                {val}
+                {w}
               </text>
-            </g>
-          ))}
+            ))}
 
-          {/* X-axis labels */}
-          {weeks.map((w, i) => (
-            <text
-              key={w}
-              x={toX(i)} y={chartH - 5}
-              textAnchor="middle"
-              fill="var(--muted-foreground)"
-              style={{ fontSize: '10px' }}
-            >
-              {w}
-            </text>
-          ))}
+            {/* Area fills */}
+            {series.map((s) => (
+              <path
+                key={s.label + '-area'}
+                d={buildArea(s.values)}
+                fill={s.color}
+                opacity="0.07"
+              />
+            ))}
 
-          {/* Data lines */}
-          {polyline(data.attackPaths, 'rgba(250,173,20)')}
-          {polyline(data.criticalIssues, 'rgba(255,77,79)')}
-          {polyline(data.secureScore, 'rgba(82,196,26)')}
-        </svg>
+            {/* Lines */}
+            {series.map((s) => (
+              <path
+                key={s.label + '-line'}
+                d={buildPath(s.values)}
+                fill="none"
+                stroke={s.color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {/* Dots */}
+            {series.map((s) =>
+              s.values.map((v, i) => (
+                <circle
+                  key={`${s.label}-dot-${i}`}
+                  cx={toX(i)} cy={toY(v)} r="3.5"
+                  fill="var(--card)"
+                  stroke={s.color}
+                  strokeWidth="2"
+                />
+              ))
+            )}
+
+            {/* Hover detection zones */}
+            {weeks.map((_, i) => (
+              <rect
+                key={`hover-${i}`}
+                x={toX(i) - 30}
+                y={padT}
+                width={60}
+                height={plotH}
+                fill="transparent"
+                onMouseEnter={() =>
+                  setHover({
+                    x: toX(i),
+                    y: padT,
+                    values: series.map((s) => s.values[i]),
+                    weekIdx: i,
+                  })
+                }
+              />
+            ))}
+
+            {/* Hover tooltip */}
+            {hover && (
+              <g>
+                <line
+                  x1={hover.x} y1={padT}
+                  x2={hover.x} y2={padT + plotH}
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth="1"
+                  strokeDasharray="3,3"
+                />
+                <rect
+                  x={hover.x < chartW / 2 ? hover.x + 10 : hover.x - 120}
+                  y={padT + 4}
+                  width="110"
+                  height={series.length * 20 + 24}
+                  rx="4"
+                  fill="rgba(15,20,35,0.92)"
+                  stroke="rgba(255,255,255,0.12)"
+                  strokeWidth="1"
+                />
+                <text
+                  x={hover.x < chartW / 2 ? hover.x + 18 : hover.x - 112}
+                  y={padT + 18}
+                  fill="rgba(255,255,255,0.5)"
+                  style={{ fontSize: '10px', fontWeight: '600' }}
+                >
+                  {weeks[hover.weekIdx]}
+                </text>
+                {series.map((s, si) => (
+                  <g key={s.label + '-tooltip'}>
+                    <circle
+                      cx={hover.x < chartW / 2 ? hover.x + 20 : hover.x - 104}
+                      cy={padT + 32 + si * 20}
+                      r="3"
+                      fill={s.color}
+                    />
+                    <text
+                      x={hover.x < chartW / 2 ? hover.x + 28 : hover.x - 96}
+                      y={padT + 36 + si * 20}
+                      fill="rgba(255,255,255,0.7)"
+                      style={{ fontSize: '10px' }}
+                    >
+                      {s.label.split(' ')[0]}: {hover.values[si]}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            )}
+          </svg>
+        </div>
       </CardContent>
     </Card>
   );

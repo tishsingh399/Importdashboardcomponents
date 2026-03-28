@@ -238,37 +238,50 @@ export default function App() {
 
             {/* Row 1: Urgent Alert Banner */}
             <div
-              className="flex items-center justify-between p-4"
+              className="flex items-center justify-between px-5 py-3.5"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,77,79,0.08), rgba(255,77,79,0.03))',
-                border: '1px solid rgba(255,77,79,0.2)',
+                background: 'linear-gradient(90deg, rgba(255,77,79,0.12) 0%, rgba(255,77,79,0.04) 60%, transparent 100%)',
+                border: '1px solid rgba(255,77,79,0.25)',
+                borderLeft: '4px solid #ff4d4f',
                 borderRadius: 'var(--radius-card)',
               }}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className="size-8 flex items-center justify-center"
-                  style={{
-                    backgroundColor: 'rgba(255,77,79,0.15)',
-                    borderRadius: '50%',
-                  }}
+                  className="size-7 flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'rgba(255,77,79,0.2)', borderRadius: '50%' }}
                 >
-                  <Zap className="size-4" style={{ color: 'var(--destructive)' }} />
+                  <Zap className="size-3.5" style={{ color: '#ff4d4f' }} />
                 </div>
-                <div>
-                  <span style={{ fontSize: 'var(--text-base)', fontWeight: 'var(--font-weight-medium)' }}>
-                    Active Threat Detected
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className="px-1.5 py-0.5"
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      backgroundColor: '#ff4d4f',
+                      color: 'white',
+                      borderRadius: '4px',
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    LIVE THREAT
                   </span>
-                  <span className="text-muted-foreground ml-2" style={{ fontSize: 'var(--text-label)' }}>
-                    CVE-2024-1234 is being actively exploited. 12 resources affected.
+                  <span style={{ fontSize: 'var(--text-base)', fontWeight: '600' }}>
+                    CVE-2024-1234 actively exploited
+                  </span>
+                  <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 'var(--text-label)' }}>·</span>
+                  <span className="text-muted-foreground" style={{ fontSize: 'var(--text-label)' }}>
+                    12 resources affected · Detected 4 minutes ago
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" style={{ borderColor: 'rgba(255,77,79,0.3)', color: 'var(--destructive)' }}>
+              <div className="flex gap-2 shrink-0">
+                <Button size="sm" variant="outline" style={{ borderColor: 'rgba(255,77,79,0.3)', color: '#ff4d4f', fontSize: 'var(--text-label)' }}>
                   Dismiss
                 </Button>
-                <Button size="sm" style={{ backgroundColor: 'var(--destructive)', color: 'white' }}>
+                <Button size="sm" style={{ backgroundColor: '#ff4d4f', color: 'white', fontSize: 'var(--text-label)' }}>
                   <Sparkles className="size-3.5 mr-1.5" />
                   AI Remediate
                 </Button>
@@ -283,6 +296,7 @@ export default function App() {
                 change={-42}
                 icon={<Bug className="size-5" />}
                 invertTrend={true}
+                sparkData={[89, 78, 72, 58, 42, 23]}
               />
               <MetricTile
                 label="Secure Score"
@@ -290,6 +304,7 @@ export default function App() {
                 change={7}
                 icon={<Shield className="size-5" />}
                 invertTrend={false}
+                sparkData={[62, 68, 71, 76, 80, 85]}
               />
               <MetricTile
                 label="Active Attack Paths"
@@ -297,6 +312,7 @@ export default function App() {
                 change={-35}
                 icon={<Activity className="size-5" />}
                 invertTrend={true}
+                sparkData={[45, 42, 38, 30, 22, 12]}
               />
               <MetricTile
                 label="Exposed Resources"
@@ -304,6 +320,7 @@ export default function App() {
                 change={-28}
                 icon={<AlertTriangle className="size-5" />}
                 invertTrend={true}
+                sparkData={[65, 62, 58, 55, 51, 47]}
               />
             </div>
 
